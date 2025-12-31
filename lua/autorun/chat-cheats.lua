@@ -1,6 +1,7 @@
 local cheatsEnabled = {}
 local waypoints = {}
 local autoAmmo = {}
+local infiniteAmmo = infiniteAmmo or {}
 
 local ammoTypes = {
     "Pistol", "SMG1", "SMG1_Grenade", "AR2", "AR2AltFire", "Buckshot", "357",
@@ -71,11 +72,12 @@ hook.Add("PlayerSay", "MRTFCheats", function(ply, text)
         ply:Kill()
         return ""
     elseif text == "/ammo" then
-        autoAmmo[ply] = true
+        infiniteAmmo[ply] = true
         ply:ChatPrint("Otomatik mermi aktif, kapatmak için /ammo_off yaz.")
         return ""
     elseif text == "/ammo_off" then
-        autoAmmo[ply] = false
+        infiniteAmmo[ply] = false
+        --autoAmmo[ply] = false
         ply:ChatPrint("Otomatik mermi kapandı.")
         return ""
     elseif text == "/help" then
@@ -381,23 +383,49 @@ hook.Add("PlayerSay", "MRTFCheats", function(ply, text)
     end
 end)
 
-timer.Create("AutoAmmoCheckTimer", 5, 0, function()
-    for ply, enabled in pairs(autoAmmo) do
+timer.Create("MRTF_InfiniteAmmo_Reserve", 1, 0, function()
+    for ply, enabled in pairs(infiniteAmmo) do
         if enabled and IsValid(ply) and ply:Alive() then
-            for _, ammoType in ipairs(ammoTypes) do
-                local current = ply:GetAmmoCount(ammoType)
-                if current < minAmmo then
-                    local amountToGive = maxAmmo - current
-                    if amountToGive > 0 then
-                        ply:GiveAmmo(amountToGive, ammoType, true)
-                    end
+            local wep = ply:GetActiveWeapon()
+            if IsValid(wep) then
+                local ammoType = wep:GetPrimaryAmmoType()
+                if ammoType ~= -1 then
+                    ply:SetAmmo(9999, ammoType)
+                end
+
+                local sec = wep:GetSecondaryAmmoType()
+                if sec ~= -1 then
+                    ply:SetAmmo(9999, sec)
                 end
             end
         end
     end
 end)
 
+hook.Add("EntityFireBullets", "MRTF_InfiniteAmmo_NoDecrease", function(ent, data)
+    if not ent:IsPlayer() then return end
+    if not infiniteAmmo[ent] then return end
+
+    timer.Simple(0, function()
+        if not IsValid(ent) then return end
+
+        local wep = ent:GetActiveWeapon()
+        if not IsValid(wep) then return end
+
+        -- CLIP KİLİT
+        if wep:Clip1() >= 0 then
+            wep:SetClip1(wep:GetMaxClip1())
+        end
+
+        -- SECONDARY CLIP (varsA)
+        if wep:Clip2() and wep:Clip2() >= 0 then
+            wep:SetClip2(wep:GetMaxClip2())
+        end
+    end)
+end)
+
 hook.Add("PlayerDisconnected", "CleanAutoAmmo", function(ply)
+    infiniteAmmo[ply] = nil
     autoAmmo[ply] = nil
     cheatsEnabled[ply] = nil
 end)
