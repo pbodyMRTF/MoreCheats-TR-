@@ -72,17 +72,12 @@ hook.Add("PlayerSay", "MRTFCheats", function(ply, text)
         ply:Kill()
         return ""
     elseif text == "/ammo" then
-        infiniteAmmo[ply] = true
-        ply:ChatPrint("Otomatik mermi aktif, kapatmak için /ammo_off yaz.")
-        return ""
-    elseif text == "/ammo_off" then
-        infiniteAmmo[ply] = false
-        --autoAmmo[ply] = false
-        ply:ChatPrint("Otomatik mermi kapandı.")
+        infiniteAmmo[ply] = not infiniteAmmo[ply]
+        ply:ChatPrint("Otomatik mermi durumu: " .. tostring(infiniteAmmo[ply]) .. " değiştirmek için tekrar /ammo yaz.")
         return ""
     elseif text == "/help" then
         ply:ChatPrint(" ------TEMEL KOMUTLAR:--------")
-        ply:ChatPrint("  /enable = hileleri aktif et")
+        ply:ChatPrint("  /enable (veya sadece /) = hileleri aktif et")
         ply:ChatPrint("  /disable = hileleri kapat")
         ply:ChatPrint("  /help = bu yardım menüsü")
         ply:ChatPrint("  /god = ölümsüzlük modu aç")
@@ -94,13 +89,13 @@ hook.Add("PlayerSay", "MRTFCheats", function(ply, text)
         ply:ChatPrint("HIZ AYARLARI: /help_speed ile ulaş")
         ply:ChatPrint(" ZIPLAMA AYARLARI: /help_gravity ile ulaş")
         ply:ChatPrint("--------")
-        ply:ChatPrint("-----------MERMİ SİSTEMİ:---------------------")
-        ply:ChatPrint("  /ammo = otomatik mermi doldurma aç(mermin 500'ün altına düşmez)")
-        ply:ChatPrint("  /ammo_off = otomatik mermi doldurma kapat")
         ply:ChatPrint("")
         ply:ChatPrint(" --------OYUNCU KONTROLÜ:----------------------")
+        ply:ChatPrint("  /ammo = sonsuz mermi aç")
         ply:ChatPrint("  /sethp [sayı] = canını ayarla")
+        ply:ChatPrint("  /v ile görünmez ol (/uv ile kapa)")
         ply:ChatPrint("  /kill = kendini öldür")
+        ply:ChatPrint("  /kill [npc_class]= npc sınıfını öldür")
         ply:ChatPrint("  /freeze = donma")
         ply:ChatPrint("  /unfreeze = donmayı çöz")
         ply:ChatPrint("  /ignite = kendini yak")
@@ -108,6 +103,10 @@ hook.Add("PlayerSay", "MRTFCheats", function(ply, text)
         ply:ChatPrint("  /clear = envanteri temizle")
         ply:ChatPrint("  /tp [oyuncu adı] = oyuncuya ışınlan")
         ply:ChatPrint("  /tp list = aktif oyuncuları listele")
+        ply:ChatPrint("")
+        ply:ChatPrint(" ------------Kitler:----------------------")
+        ply:ChatPrint("  /kit, /kit_normal = normal silahları ver")
+        ply:ChatPrint("  /kitsp,/kit_speedrun,/kit_dream,/kitd = Speedrun Kit")
         ply:ChatPrint("")
         ply:ChatPrint(" ------------NPC KONTROLÜ:----------------------")
         ply:ChatPrint("  /summon [npc_adı] = NPC çağır")
@@ -135,6 +134,7 @@ hook.Add("PlayerSay", "MRTFCheats", function(ply, text)
         ply:ChatPrint("/gravity_moon = ay gravity'si")
         ply:ChatPrint("/gravity_space = uzay gravity'si")
         ply:ChatPrint("/gravity_max = ZIPLAMAYAN.... ")
+        ply:ChatPrint("/gravity_custom [sayı] = custom yer çekimi değeri")
         return ""
     elseif text == "/disable" then
         cheatsEnabled[ply] = false
@@ -383,45 +383,54 @@ hook.Add("PlayerSay", "MRTFCheats", function(ply, text)
     end
 end)
 
+-- REZERVE AMMO
 timer.Create("MRTF_InfiniteAmmo_Reserve", 1, 0, function()
     for ply, enabled in pairs(infiniteAmmo) do
         if enabled and IsValid(ply) and ply:Alive() then
             local wep = ply:GetActiveWeapon()
             if IsValid(wep) then
-                local ammoType = wep:GetPrimaryAmmoType()
-                if ammoType ~= -1 then
-                    ply:SetAmmo(9999, ammoType)
-                end
-
-                local sec = wep:GetSecondaryAmmoType()
-                if sec ~= -1 then
-                    ply:SetAmmo(9999, sec)
+                local ammoID = wep:GetPrimaryAmmoType()
+                if ammoID ~= -1 then
+                    local ammoName = game.GetAmmoName(ammoID)
+                    if ammoName then
+                        ply:SetAmmo(9999, ammoName)
+                    end
                 end
             end
         end
     end
 end)
 
-hook.Add("EntityFireBullets", "MRTF_InfiniteAmmo_NoDecrease", function(ent, data)
-    if not ent:IsPlayer() then return end
-    if not infiniteAmmo[ent] then return end
+-- CLIP KİLİT (ateş anı)
+hook.Add("EntityFireBullets", "MRTF_InfiniteAmmo_Fire", function(ent)
+    if not ent:IsPlayer() or not infiniteAmmo[ent] then return end
 
     timer.Simple(0, function()
-        if not IsValid(ent) then return end
-
-        local wep = ent:GetActiveWeapon()
-        if not IsValid(wep) then return end
-
-        -- CLIP KİLİT
-        if wep:Clip1() >= 0 then
-            wep:SetClip1(wep:GetMaxClip1())
-        end
-
-        -- SECONDARY CLIP (varsA)
-        if wep:Clip2() and wep:Clip2() >= 0 then
-            wep:SetClip2(wep:GetMaxClip2())
+        if IsValid(ent) then
+            local wep = ent:GetActiveWeapon()
+            if IsValid(wep) then
+                local max = wep:GetMaxClip1()
+                if max and max > 0 then
+                    wep:SetClip1(max)
+                end
+            end
         end
     end)
+end)
+
+-- CLIP KİLİT (think fallback)
+hook.Add("Think", "MRTF_InfiniteAmmo_Think", function()
+    for ply, enabled in pairs(infiniteAmmo) do
+        if enabled and IsValid(ply) and ply:Alive() then
+            local wep = ply:GetActiveWeapon()
+            if IsValid(wep) then
+                local max = wep:GetMaxClip1()
+                if max and max > 0 then
+                    wep:SetClip1(max)
+                end
+            end
+        end
+    end
 end)
 
 hook.Add("PlayerDisconnected", "CleanAutoAmmo", function(ply)
