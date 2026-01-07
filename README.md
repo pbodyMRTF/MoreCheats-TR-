@@ -1,4 +1,4 @@
-------TEMEL KOMUTLAR:--------
+------TEMEL KOMUTLAR:-------- 
 /enable (veya sadece /) = hileleri aktif et
 /disable = hileleri kapat
 /help = bu yardım menüsü
@@ -8,7 +8,7 @@
 /notarget = NPC'lerden görünmez ol
 /target = tekrar görünür ol
 
---------OYUNCU KONTROLÜ:-----
+--------OYUNCU KONTROLÜ:----- 
 /ammo = sonsuz mermi aç
 /sethp [sayı] = canını ayarla
 /v ile görünmez ol (/uv ile kapa)
@@ -22,20 +22,20 @@
 /tp [oyuncu adı] = oyuncuya ışınlan
 /tp list = aktif oyuncuları listele
 
-------------Kitler:----------
+------------Kitler:---------- 
 /kit, /kit_normal = normal silahları ver
 /kitsp,/kit_speedrun,/kit_dream,/kitd = Speedrun Kit
 
-------------NPC KONTROLÜ:----
+------------NPC KONTROLÜ:---- 
 /summon [npc_adı] = NPC çağır
 /rm @e = tüm NPC'leri temizle
 
------------WAYPOINT KOMUTLARI:----------------
+-----------WAYPOINT KOMUTLARI:---------------- 
 /waypoint [isim] = waypoint oluştur
 /tpw [isim] = waypoint'e ışınlan
 /tpw_list = waypoint listesini göster
 
-------------speed---------------
+------------speed--------------- 
 /speed = hız arttır
 /speed_normal = hız normal
 /speed_turbo = hız arttır++
@@ -43,7 +43,7 @@
 /speed_sudo = hız premium arttır++ pro max 512 gb
 /speed_custom = custom hız değeri
 
-------------gravity-------------
+------------gravity------------- 
 /gravity = restore gravity normal
 /gravity_add = birazcık zıplatıyo
 /gravity_moon = ay gravity'si
